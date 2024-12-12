@@ -10,26 +10,33 @@ class BottomBar extends StatelessWidget {
       body: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          ElevatedButton(
-              onPressed: (){}
-              , child: Stack(
-              alignment: Alignment.center,
-              children: [
-                Image.asset('assets/slice/tab_on.png', width: 150,),
-                Image.asset('assets/slice/home_on.png', width: 150,)
-              ]
-            )
-          ),
-          ElevatedButton(
+          Expanded(
+            flex: 1,
+            child: TextButton(
               onPressed: (){}
               , child: Stack(
                 alignment: Alignment.center,
                 children: [
-                  Image.asset('assets/slice/tab_off.png', width: 150,),
-                  Image.asset('assets/slice/bell_off.png', width: 150,)
+                  Image.asset('assets/slice/tab_on.png',),
+                  Image.asset('assets/slice/home_on.png',),
                 ]
-            )
           ),
+          ),
+          ),
+
+          Expanded(
+            flex: 1,
+            child: TextButton(
+              onPressed: (){}
+              , child: Stack(
+              alignment: Alignment.center,
+              children: [
+                Image.asset('assets/slice/tab_off.png',),
+                Image.asset('assets/slice/bell_off.png',)
+              ]
+          )
+          ),)
+
         ],
       ),
     );
