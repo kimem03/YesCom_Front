@@ -1,110 +1,270 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:yescom/screen/home_screen.dart';
+// import 'package:yescom/screen/bell_screen.dart';
 import 'package:yescom/widget/appbar.dart';
-import 'package:yescom/widget/bottom_bar.dart';
-import 'package:yescom/widget/button.dart';
-import 'package:yescom/widget/dropdown.dart';
 
 import 'login_screen.dart';
+import 'bell_screen.dart';
 
-class Routes {
-  Routes._();
+class MainScreen extends StatefulWidget {
+  const MainScreen({super.key});
 
-  static const String login_screen = "/login_screen";
-  static const String main_screen = "/main_screen";
-
-  static final routes = <String, WidgetBuilder>{
-    login_screen: (BuildContext context) => LoginScreen(),
-    main_screen: (BuildContext context) => MainScreen(),
-  };
+  @override
+  State<MainScreen> createState() => _MainScreenState();
 }
 
-class MainScreen extends StatelessWidget {
-  const MainScreen({super.key});
+class _MainScreenState extends State<MainScreen> {
+  // 드롭 다운 기본값
+  String dropdownValue = "서한1";
+  final PageController _pageController = PageController();
+  int _currentPage = 0;
 
   @override
   Widget build(BuildContext context) {
     final Size size = MediaQuery.of(context).size;
 
+    // 상단 바, 드롭 다운
     var top = SafeArea(
-      child: Scaffold(
-        backgroundColor: CupertinoColors.inactiveGray,
-        appBar: PreferredSize(
-          preferredSize: Size.fromHeight(60),
-          child: Appbar(),
-        ),
-        body: Container(
-          alignment: Alignment.topCenter,
-          width: double.infinity,
-          height: double.infinity,
-          child: DropDown(),
-        ),
-      ),
-    );
-
-    var content = Scaffold(
-      body: Stack(
-          alignment: Alignment.center,
-          children: [
-            Image.asset('assets/slice/bg_lock.png',
-              fit: BoxFit.fitWidth,
-              width: double.infinity,),
-            Image.asset('assets/slice/lock_off.png', height: size.height*0.8,),
-          ]
-      ),
-    );
-
-    var btn = Container(
-      alignment: Alignment.center,
-      margin: EdgeInsets.fromLTRB(size.width * 0.05, 0, size.width * 0.01, 0),
-      child: Scaffold(
-        body: Button(),
-      ),
-    );
-
-    var banner = Container(
-      margin: EdgeInsets.fromLTRB(0, size.height * 0.12, 0, 0),
-      child: Scaffold(
-        body: Image.asset(
-          'assets/slice/banner.png',
-          fit: BoxFit.fitWidth,
-          width: double.infinity,
-        ),
-      ),
-    );
-
-    var bottom = Container(
-      margin: EdgeInsets.fromLTRB(0, 0, 0, 0),
         child: Scaffold(
-          body: BottomBar(),
+            appBar: PreferredSize(
+              preferredSize: Size.fromHeight(70),
+              child: Appbar(),
+            ),
+            body: SafeArea(
+              child: Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    _buildArea(),
+                  ],
+                ),
+              ),
+            )
         )
+    );
+
+    // 중앙
+    var center = Scaffold(
+      body: Stack(
+        alignment: Alignment.center,
+        children: [
+          Image.asset('assets/slice/bg_lock.png',
+            height: 600,
+            width: size.width,
+          fit: BoxFit.contain,),
+          Positioned(
+            top: 10,
+            child: Text.rich(
+              TextSpan(
+                text: "현재 ",
+                children: [
+                  TextSpan(
+                    text: "해제 ",
+                    style: TextStyle(color: Colors.green),
+                    children: [
+                      TextSpan(
+                        text: "상태 입니다.",
+                        style: TextStyle(color: Colors.black)
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+              style: TextStyle(fontSize: 25),
+            ),
+          ),
+          Positioned(
+            bottom: 0,
+            child: Image.asset('assets/slice/_Reset.png',
+              width: size.width*0.5,),
+          )
+        ],
+      ),
+    );
+
+    // 버튼 (경계, 해제, 문열림)
+    var button = btn();
+
+    // 배너
+    var banner = Container(
+      margin: EdgeInsets.fromLTRB(0, size.height*0.06, 0, 0),
+      child: Scaffold(
+        body: Image.asset('assets/slice/banner.png',
+        fit: BoxFit.fitWidth,
+        width: double.infinity,),
+      ),
+    );
+
+    // 전체 결과값 출력
+    return MaterialApp(
+      home: Column(
+        children: [
+          Expanded(flex: 1, child: top,),
+          Expanded(flex: 1, child: center,),
+          Expanded(flex: 1, child: button,),
+          Expanded(flex: 1, child: banner,),
+          // Expanded(flex: 1, child: navBar,),
+        ],
+      ),
+    );
+  }
+  // 드롭 다운 요소
+  Widget _buildArea() {
+    List<String> dropdownList = ['서한1', '서한2'];
+    if(dropdownValue == ""){
+      dropdownValue = dropdownList.first;
+    }
+    return DropdownButton(
+      value: dropdownValue,
+      items: dropdownList.map<DropdownMenuItem<String>>((String value){
+        return DropdownMenuItem<String>(
+            value: value,
+            child: Text(value)
+        );
+      }).toList()
+      , onChanged: (String? value) {
+      setState(() {
+        dropdownValue = value!;
+        print(value);
+      });
+    },);
+  }
+}
+
+// 버튼 스타일 및 다이얼로그 쿼리
+class btn extends StatelessWidget{
+  const btn({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final Size size = MediaQuery.of(context).size;
+
+    // 경계
+    var lock = MaterialButton(
+      onPressed: (){_showLockDialog(context);},
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          Image.asset('assets/slice/btn_3.png'),
+          Text('경계', style: TextStyle(
+              fontSize: 18
+          ),),
+        ],
+      ),
+    );
+
+    // 해제
+    var unlock = MaterialButton(
+      onPressed: (){_showUnlockDialog(context);},
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          Image.asset('assets/slice/btn_3.png'),
+          Text('해제', style: TextStyle(
+              fontSize: 18
+          ),)
+        ],
+      ),
+    );
+
+    // 문열림
+    var open = MaterialButton(
+      onPressed: (){_showOpenDialog(context);},
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          Image.asset('assets/slice/btn_3.png'),
+          Text('문열림', style: TextStyle(
+              fontSize: 18
+          ),)
+        ],
+      ),
     );
 
     return Scaffold(
       body: Column(
         children: [
           Expanded(
-            flex: 2,
-            child: top,
+            child: lock,
           ),
           Expanded(
-            flex: 1,
-            child: content,
+            child: unlock,
           ),
           Expanded(
-            flex: 1,
-            child: btn,
-          ),
-          Expanded(
-            flex: 2,
-            child: banner,
-          ),
-          Expanded(
-            flex: 1,
-            child: bottom,
+            child: open,
           ),
         ],
       ),
     );
   }
+
+  // 경계 다이얼로그
+  Future<dynamic> _showLockDialog(BuildContext context) {
+    return showDialog(
+        barrierDismissible: false,
+        context: context,
+        builder: (BuildContext context) => AlertDialog(
+          title: Text('경계'),
+          content: Text('경계 모드로 전환 하겠습니까?'),
+          actions: [
+            TextButton(
+                onPressed: () => {
+                  Navigator.of(context).pop(),
+                },
+                child: Text('예')
+            ),
+            TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: Text('아니오')
+            ),
+          ],
+        )
+    );
+  }
+
+  // 해제 다이얼로그
+  Future<dynamic> _showUnlockDialog(BuildContext context) {
+    return showDialog(
+        barrierDismissible: false,
+        context: context,
+        builder: (BuildContext context) => AlertDialog(
+          title: Text('해제'),
+          content: Text('해제 모드로 전환 하겠습니까?'),
+          actions: [
+            TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: Text('예')
+            ),
+            TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: Text('아니오')
+            ),
+          ],
+        )
+    );
+  }
+
+  // 문열림 다이얼로그
+  Future<dynamic> _showOpenDialog(BuildContext context) {
+    return showDialog(
+        barrierDismissible: false,
+        context: context,
+        builder: (BuildContext context) => AlertDialog(
+          title: Text('문열림'),
+          content: Text('문을 열겠습니까?'),
+          actions: [
+            TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: Text('예')
+            ),
+            TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: Text('아니오')
+            ),
+          ],
+        )
+    );
+  }
 }
+// 버튼 쿼리 끝

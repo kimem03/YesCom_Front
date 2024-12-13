@@ -5,16 +5,14 @@ class Appbar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final Size size = MediaQuery.of(context).size;
+
     return Scaffold(
-      backgroundColor: Colors.white,
       body: Stack(
         alignment: Alignment.center,
-      //   decoration: BoxDecoration(
-      //   color: Colors.white,
-      // ),
       children: [
-        Image.asset('assets/slice/top_bg.png'),
-        Image.asset('assets/slice/top_logo02.png', width: 190,)
+        Image.asset('assets/slice/top_bg.png',),
+        Image.asset('assets/slice/top_logo02.png', width: size.width*0.6,)
       ]
     ),
     );
