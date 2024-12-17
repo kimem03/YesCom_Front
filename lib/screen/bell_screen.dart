@@ -34,22 +34,22 @@ class _BellScreenState extends State<BellScreen> {
     body: SafeArea(
       child: SingleChildScrollView(
       scrollDirection: Axis.vertical,
-      child: DataTable(
-        columns: [
+        child: DataTable(
+        columns: const [
           DataColumn(label: Text('사용자')),
           DataColumn(label: Text('일자')),
           DataColumn(label: Text('시간')),
           DataColumn(label: Text('신호')),
         ],
-        rows: [
-          DataRow(cells: [
-            DataCell(Text('홍길동')),
-            DataCell(Text('2024.12.13')),
-            DataCell(Text('14:01:12')),
-            DataCell(Text('해제', style: TextStyle(
-              color: Colors.red
-            ),)),
-          ]),
+        rows: const [
+          // DataRow(cells: [
+          //   DataCell(Text('홍길동')),
+          //   DataCell(Text('2024.12.13')),
+          //   DataCell(Text('14:01:12')),
+          //   DataCell(Text('해제', style: TextStyle(
+          //     color: Colors.red
+          //   ),)),
+          // ]),
         ],
       ),
     ),

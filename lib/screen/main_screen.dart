@@ -1,11 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:yescom/screen/home_screen.dart';
-// import 'package:yescom/screen/bell_screen.dart';
 import 'package:yescom/widget/appbar.dart';
-
-import 'login_screen.dart';
-import 'bell_screen.dart';
 
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
@@ -23,6 +18,7 @@ class _MainScreenState extends State<MainScreen> {
   @override
   Widget build(BuildContext context) {
     final Size size = MediaQuery.of(context).size;
+    Image _image = Image.asset('assets/slice/_Reset.png', width: size.width*0.5,);
 
     // 상단 바, 드롭 다운
     var top = SafeArea(
@@ -76,8 +72,7 @@ class _MainScreenState extends State<MainScreen> {
           ),
           Positioned(
             bottom: 0,
-            child: Image.asset('assets/slice/_Reset.png',
-              width: size.width*0.5,),
+            child: _image,
           )
         ],
       ),
@@ -211,6 +206,8 @@ class btn extends StatelessWidget{
             TextButton(
                 onPressed: () => {
                   Navigator.of(context).pop(),
+                  Image.asset('assets/slice/_Set.png'),
+                  Text('경계', style: TextStyle(color: Colors.red),)
                 },
                 child: Text('예')
             ),
@@ -233,7 +230,11 @@ class btn extends StatelessWidget{
           content: Text('해제 모드로 전환 하겠습니까?'),
           actions: [
             TextButton(
-                onPressed: () => Navigator.of(context).pop(),
+                onPressed: () => {
+                  Navigator.of(context).pop(),
+                  Image.asset('assets/slice/_Reset.png'),
+                  Text('해제', style: TextStyle(color: Colors.green),)
+                },
                 child: Text('예')
             ),
             TextButton(
