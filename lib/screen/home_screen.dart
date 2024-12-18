@@ -1,6 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
+import '../api/api_service.dart';
 import 'bell_screen.dart';
 import 'main_screen.dart';
 
@@ -12,6 +13,18 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
+  String phone = "";    // 사용자 전화 번호
+  String id = "";       // 사용자 id
+  String hexPw = "";    // 비밀번호 (hexadecimal)
+
+
+  // 원격 요청 이벤트
+  Future<void> _handleRemoteBtnPress() async {
+    ApiService apiService = ApiService();
+    String serverAddress = await apiService.loadServerAddress();
+
+  }
+
   int _currentIndex = 0;
 
   final List<Widget> _pages = [MainScreen(), BellScreen()];
