@@ -1,10 +1,11 @@
+import 'dart:async';
+
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert'; // JSON 인코딩/디코딩을 위해 필요
 import 'package:http/http.dart' as http;
 import 'package:yescom/api/api_service.dart';
-import 'package:yescom/screen/phone_auth_screen.dart';
 
 import 'home_screen.dart';
 
@@ -20,12 +21,16 @@ class _LoginScreenState extends State<LoginScreen> {
   bool _idChecked = false;
   bool _pwChecked = false;
 
+
   String phone = "";    // 사용자 전화 번호
   String id = "";       // 사용자 id
   String pw = "";       // 사용자 비밀번호
+  String hexPw = "";    // 비밀번호 (hexadecimal)
   String authNo = "";  // 사용자가 입력한 인증 번호
   String serverAuthNo = "";  // 서버에서 전송한 인증 번호
   // String baseUrl = "http://192.168.1.88:33338/user/mobile?";
+
+  bool isAuthNoEnabled = false;   // 인증번호 비활성화
 
   // 전화번호
   final TextEditingController _phoneController = TextEditingController();
@@ -50,6 +55,7 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   void dispose() {
     _phoneController.dispose();
+    _authController.dispose();
     super.dispose();
   }
 
@@ -60,8 +66,9 @@ class _LoginScreenState extends State<LoginScreen> {
 
     id = _idController.text.trim();
     pw = _passwordController.text.trim();
+    hexPw = utf8.encode(pw).map((e) => e.toRadixString(16).padRight(2, '0')).join();
 
-    String authLogin = "phone=$phone&id=$id&pw=$pw&method=login";
+    String authLogin = "phone=$phone&id=$id&pw=$hexPw&method=login";
     String url = serverAddress + authLogin;
 
     try {
@@ -71,6 +78,8 @@ class _LoginScreenState extends State<LoginScreen> {
       if (response.statusCode == 200) {
         print("서버 응답 성공: ${response.body}");
         print(url);
+        print(id);
+        print(hexPw);
       } else {
         print("서버 응답 실패: ${response.statusCode}");
         print(url);
@@ -80,13 +89,17 @@ class _LoginScreenState extends State<LoginScreen> {
       print(url);
     }
 
+    if(id.isNotEmpty && pw.isNotEmpty) {
       // 통신 구현 되면 Replacement 로 변경
-      Navigator.push(context, new MaterialPageRoute(
-          builder: (context) => new HomeScreen())
+      Navigator.pushReplacement(context, MaterialPageRoute(
+          builder: (context) => HomeScreen())
       );
+    } else {
+      _showDialog("로그인 실패", "ID와 비밀번호를 입력해주세요.");
+    }
   }
 
-  // 인증하기 버튼 클릭시 이벤트
+  // 인증번호 받기 버튼 클릭시 이벤트
   Future<void> _handleAuthBtnPress() async {
     ApiService apiService = ApiService();
     String serverAddress = await apiService.loadServerAddress();
@@ -102,10 +115,15 @@ class _LoginScreenState extends State<LoginScreen> {
 
       if (response.statusCode == 200) {
         print("서버 응답 성공: ${response.body}");
-        print(url);
+        final Map<String, dynamic> jsonData = jsonDecode(response.body);
+
+        setState(() {
+          serverAuthNo = jsonData['Data']['AuthNo'];
+          isAuthNoEnabled = true; // 인증번호 입력 창 표시
+        });
+        print("서버 인증번호: $serverAuthNo");
       } else {
         print("서버 응답 실패: ${response.statusCode}");
-        print(url);
       }
     } catch (e) {
       print("데이터 전송 중 오류 발생: $e");
@@ -113,60 +131,50 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
-  // 인증번호
+  // 인증번호 컨트롤러
   final TextEditingController _authController = TextEditingController();
 
-  Future<void> fetchAuthData() async {
-    ApiService apiService = ApiService();
-    String serverAddress = await apiService.loadServerAddress();
-    String authPhone = "phone=$phone&id=&pw=&method=auth";
-
-    String url = serverAddress + authPhone;
-
-    try {
-      final response = await http.post(
-        Uri.parse(url),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          "request": "getAuthNo",
-          "phone": phone // 예시 전화번호, 필요 시 변수로 대체
-        }),
-      );
-
-      if (response.statusCode == 200) {
-        // 응답 데이터(JSON)를 파싱
-        final Map<String, dynamic> jsonData = jsonDecode(response.body);
-        print("서버 응답: $jsonData");
-
-        // JSON에서 AuthNo 값 추출
-        setState(() {
-          serverAuthNo = jsonData['Data']['AuthNo'];
-        });
-        print("서버 인증번호: $serverAuthNo");
-      } else {
-        print("서버 요청 실패: ${response.statusCode}");
-      }
-    } catch (e) {
-      print("오류 발생: $e");
-    }
-  }
-
-  void _handleCheckBtnPress() {
+  // 인증하기 버튼 클릭시 이벤트
+  Future<void> _handleCheckBtnPress() async {
     authNo = _authController.text.trim();
+
     if (authNo == serverAuthNo) {
-      print("인증 성공! 서버 인증번호와 일치합니다.");
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("인증 성공!")),
-      );
+      // print("인증 성공! 서버 인증번호와 일치합니다.");
+      _showDialog("인증 성공", "인증 번호가 일치합니다.");
     } else {
+      _showDialog("인증 실패", "인증 번호가 일치하지 않습니다.");
       print("인증 실패! 입력한 인증번호가 다릅니다.");
-      print(authNo);
-      print(serverAuthNo);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("인증 실패!")),
-      );
+      // print(authNo);
+      // print(serverAuthNo);
     }
   }
+
+  void _showDialog(String title, String content) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text(title),
+          content: Text(content),
+          actions: [
+            TextButton(
+              onPressed: () {
+                if (title == "인증 성공") {
+                  // 인증 성공 시 입력란과 버튼 비활성화
+                  setState(() {
+                    isAuthNoEnabled = false;
+                  });
+                }
+                Navigator.of(context).pop(); // Dialog 닫기
+              },
+              child: Text("확인"),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final Size size = MediaQuery.of(context).size;
@@ -214,10 +222,42 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                         SizedBox(height: 30,),
 
-                        // 인증번호 입력 및 비교 화면
-                        PhoneAuthScreen(),
+                        // 인증 번호 입력란
+                        // isAuthNoEnabled ?
+                        TextField(
+                          controller: _authController,
+                          decoration: InputDecoration(labelText: "인증번호를 입력해주세요."),
+                          keyboardType: TextInputType.number,
+                          enabled: isAuthNoEnabled,
+                        ),
+                        // :
+                        SizedBox(height: 30,),
 
-                        // 인증 버튼 (최초 1회만)
+                        // 인증하기 버튼
+                        // isAuthNoEnabled ?
+                        SizedBox(
+                          height: size.height * 0.06,
+                          width: size.width * 0.9,
+                          child: MaterialButton(
+                            onPressed: isAuthNoEnabled
+                                ? _handleCheckBtnPress
+                                : null,
+                            color: isAuthNoEnabled
+                                ? Color.fromRGBO(0, 93, 171, 1) // 활성화 시 색상
+                                : Color.fromRGBO(204, 204, 204, 0), // 비활성화 시 색상
+                            child: Text('인증하기',
+                              style:
+                              TextStyle(
+                                color: Colors.white,
+                                fontSize: 20,
+                              ),
+                            ),
+                          ),
+                        ),
+                        // :
+                        Text("\n"),
+
+                        // 인증번호 받기 버튼 (최초 1회만)
                         SizedBox(
                           height: size.height * 0.06,
                           width: size.width*0.9,
@@ -226,7 +266,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             color: isButtonEnabled
                                 ? Color.fromRGBO(0, 93, 171, 1) // 활성화 시 색상
                                 : Color.fromRGBO(204, 204, 204, 0), // 비활성화 시 색상
-                            child: Text('인증하기', style:
+                            child: Text('인증번호 받기', style:
                             TextStyle(
                                 color: Colors.white,
                                 fontSize: 20
@@ -262,7 +302,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               activeColor: Color.fromRGBO(0, 93, 171, 1),
 
                             ),
-                            Text('id 저장하기', style: TextStyle(fontSize: 18),),
+                            Text('ID 저장하기', style: TextStyle(fontSize: 18),),
 
                             Checkbox(
                                 value: _pwChecked,
@@ -273,7 +313,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                 },
                               activeColor: Color.fromRGBO(0, 93, 171, 1),
                             ),
-                            Text('pw 저장하기', style: TextStyle(fontSize: 18),),
+                            Text('PW 저장하기', style: TextStyle(fontSize: 18),),
                           ],
                         )
                       ],
