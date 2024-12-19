@@ -1,6 +1,9 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
+
 import '../api/api_service.dart';
 import 'bell_screen.dart';
 import 'main_screen.dart';
@@ -16,6 +19,33 @@ class _HomeScreenState extends State<HomeScreen> {
   String phone = "";    // 사용자 전화 번호
   String id = "";       // 사용자 id
   String hexPw = "";    // 비밀번호 (hexadecimal)
+
+  String? _deviceToken;
+
+  @override
+  void initState(){
+    super.initState();
+    _getDeviceToken();
+  }
+
+  // 디바이스 토큰 정보
+  Future<void> _getDeviceToken() async {
+    try {
+      // Firebase Messaging 인스턴스 생성
+      FirebaseMessaging messaging = FirebaseMessaging.instance;
+
+      // 디바이스 토큰 가져오기
+      String? token = await messaging.getToken();
+      setState(() {
+        _deviceToken = token;
+      });
+
+      // 토큰 출력
+      print("Device Token : $_deviceToken");
+    } catch (e) {
+      print("Error : $e");
+    }
+  }
 
 
   // 원격 요청 이벤트
@@ -57,7 +87,17 @@ class _HomeScreenState extends State<HomeScreen> {
         onTap: _onItemTapped,
       ),
     );
+    // return Scaffold(
+    //   appBar: AppBar(title: Text('FCM Device Token')),
+    //   body: Center(
+    //     child: _deviceToken == null
+    //         ? CircularProgressIndicator()
+    //         : SelectableText(
+    //       "Device Token:\n$_deviceToken",
+    //       textAlign: TextAlign.center,
+    //     ),
+    //   ),
+    // );
 
-    throw UnimplementedError();
   }
 }

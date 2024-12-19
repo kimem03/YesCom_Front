@@ -1,8 +1,10 @@
 import 'dart:async';
+import 'dart:io';
 
+import 'package:device_info_plus/device_info_plus.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert'; // JSON 인코딩/디코딩을 위해 필요
 import 'package:http/http.dart' as http;
 import 'package:yescom/api/api_service.dart';
@@ -28,13 +30,18 @@ class _LoginScreenState extends State<LoginScreen> {
   String hexPw = "";    // 비밀번호 (hexadecimal)
   String authNo = "";  // 사용자가 입력한 인증 번호
   String serverAuthNo = "";  // 서버에서 전송한 인증 번호
+  String dkind = "";    // 단말기 종류 (android/ios)
+  String? deviceToken = "";   // 단말기 토큰
+  String? dtoken = "";        // 단말기 토큰 hexadecimal
+
   // String baseUrl = "http://192.168.1.88:33338/user/mobile?";
 
   bool isAuthNoEnabled = false;   // 인증번호 비활성화
+  bool isButtonEnabled = false;   // 버튼 비활성화
+  bool isPhoneEnabled = true;     // 전화번호 입력 활성화
 
   // 전화번호
   final TextEditingController _phoneController = TextEditingController();
-  bool isButtonEnabled = false;   // 버튼 비활성화
   // id
   final TextEditingController _idController = TextEditingController();
   // 비밀번호
@@ -59,8 +66,8 @@ class _LoginScreenState extends State<LoginScreen> {
     super.dispose();
   }
 
-  // 로그인 버튼 클릭시 이벤트
-  Future<void> _handleLoginBtnPress() async {
+  // 로그인 정보 전송
+  Future<void> _sendLoginInfo() async {
     ApiService apiService = ApiService();
     String serverAddress = await apiService.loadServerAddress();
 
@@ -77,25 +84,86 @@ class _LoginScreenState extends State<LoginScreen> {
 
       if (response.statusCode == 200) {
         print("서버 응답 성공: ${response.body}");
-        print(url);
         print(id);
         print(hexPw);
+        print(url);
       } else {
         print("서버 응답 실패: ${response.statusCode}");
-        print(url);
       }
     } catch (e) {
       print("데이터 전송 중 오류 발생: $e");
-      print(url);
+    }
+  }
+
+  // 단말기 정보 전송
+  Future<void> _sendMobileInfo() async {
+    ApiService apiService = ApiService();
+    String serverAddress = await apiService.loadServerAddress();
+
+    DeviceInfoPlugin deviceInfo = DeviceInfoPlugin();
+    deviceToken = await FirebaseMessaging.instance.getToken(); // 단말기 토큰
+    dtoken = utf8.encode(deviceToken!).map((e) => e.toRadixString(16).padLeft(2, '0')).join();
+
+    // 단말기 정보 (android/ios)
+    if (Platform.isAndroid) {
+      dkind = "1"; // Android
+    } else if (Platform.isIOS) {
+      dkind = "2"; // iOS
     }
 
-    if(id.isNotEmpty && pw.isNotEmpty) {
-      // 통신 구현 되면 Replacement 로 변경
-      Navigator.pushReplacement(context, MaterialPageRoute(
-          builder: (context) => HomeScreen())
+    String mobile = "phone=$phone&id=$id&pw=$hexPw&method=mobileinfo&dkind=$dkind&dtoken=$dtoken";
+    String url = serverAddress + mobile;
+
+    try {
+      // HTTP GET 요청 보내기
+      final response = await http.get(Uri.parse(url));
+
+      if (response.statusCode == 200) {
+        print("단말기 정보 전송 성공: ${response.body}");
+        print(url);
+      } else {
+        print("단말기 정보 전송 실패: ${response.statusCode}");
+      }
+    } catch (e) {
+      print("단말기 정보 전송 중 오류 발생: $e");
+    }
+  }
+
+  // 로그인, 단말기 정보 통합 핸들러 (로그인 버튼 클릭 시)
+  Future<void> _handleLoginBtnPress() async {
+    ApiService apiService = ApiService();
+    String serverAddress = await apiService.loadServerAddress();
+
+    await _sendLoginInfo(); // 로그인 정보 전송
+    await _sendMobileInfo(); // 단말기 정보 전송
+
+    if (id.isNotEmpty && pw.isNotEmpty) {
+      // 로그인 성공 시 이동
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => HomeScreen()),
       );
+
+      // 로그인 즉시 현재 상태 요청
+      String state = "phone=$phone&id=$id&pw=$hexPw&method=currentstatus";
+      String stateUrl = serverAddress + state;
+      try {
+        // HTTP GET 요청 보내기
+        final response = await http.get(Uri.parse(stateUrl));
+
+        if (response.statusCode == 200) {
+          print("전송 성공: ${response.body}");
+          print(stateUrl);
+        } else {
+          print("전송 실패: ${response.statusCode}");
+        }
+      } catch (e) {
+        print("오류 발생: $e");
+      }
+
     } else {
       _showDialog("로그인 실패", "ID와 비밀번호를 입력해주세요.");
+      print('$id \n $pw');
     }
   }
 
@@ -163,6 +231,8 @@ class _LoginScreenState extends State<LoginScreen> {
                   // 인증 성공 시 입력란과 버튼 비활성화
                   setState(() {
                     isAuthNoEnabled = false;
+                    isButtonEnabled = false;
+                    isPhoneEnabled = false;
                   });
                 }
                 Navigator.of(context).pop(); // Dialog 닫기
@@ -219,6 +289,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           controller: _phoneController,
                           decoration: InputDecoration(labelText: "전화번호를 입력해주세요."),
                           keyboardType: TextInputType.phone,
+                          enabled: isPhoneEnabled,
                         ),
                         SizedBox(height: 30,),
 

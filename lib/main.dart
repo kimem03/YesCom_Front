@@ -1,8 +1,8 @@
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
-import 'package:yescom/screen/bell_screen.dart';
+import 'package:yescom/api/FcmService.dart';
 import 'package:yescom/screen/login_screen.dart';
 import 'package:yescom/screen/main_screen.dart';
-import 'package:yescom/widget/appbar.dart';
 
 class Routes {
   Routes._();
@@ -16,8 +16,14 @@ class Routes {
   };
 }
 
-void main() {
-  runApp(const MyApp());
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp(); // Firebase 초기화
+
+  FcmService fcmService = FcmService();
+  fcmService.getDeviceToken();
+
+  runApp(MyApp());
 }
 
 class MyApp extends StatelessWidget {

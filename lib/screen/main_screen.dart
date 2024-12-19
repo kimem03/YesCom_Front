@@ -1,6 +1,11 @@
+import 'dart:convert';
+
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:yescom/widget/appbar.dart';
+import 'package:http/http.dart' as http;
+
+import '../api/api_service.dart';
 
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
@@ -10,8 +15,56 @@ class MainScreen extends StatefulWidget {
 }
 
 class _MainScreenState extends State<MainScreen> {
+  String phone = "";    // 사용자 전화 번호
+  String id = "";       // 사용자 id
+  String pw = "";       // 사용자 비밀번호
+  String hexPw = "";    // 비밀번호 (hexadecimal)
+
+  // Future<void> _stateInfo() async {
+  //   ApiService apiService = ApiService();
+  //   String serverAddress = await apiService.loadServerAddress();
+  //
+  //   String state = "phone=$phone&id=$id&pw=$hexPw&method=currentstatus";
+  //   String stateUrl = serverAddress + state;
+  //   try {
+  //     // HTTP GET 요청 보내기
+  //     final response = await http.get(Uri.parse(stateUrl));
+  //
+  //     if (response.statusCode == 200) {
+  //       print("전송 성공: ${response.body}");
+  //       print(stateUrl);
+  //     } else {
+  //       print("전송 실패: ${response.statusCode}");
+  //     }
+  //   } catch (e) {
+  //     print("오류 발생: $e");
+  //   }
+  // }
+
+  Future<void> _getStateInfo() async {
+    ApiService apiService = ApiService();
+    String serverAddress = await apiService.loadServerAddress();
+
+    String state = "phone=$phone&id=$id&pw=$hexPw&method=currentstatus";
+    String stateUrl = serverAddress + state;
+
+    try {
+      final response = await http.get(Uri.parse(stateUrl));
+      if (response.statusCode == 200) {
+        List<dynamic> jsonList = json.decode(response.body);
+        // List<Data> dataList =
+        // jsonList.map((json) => Data.fromJson(json)).toList();
+        // setState(() {
+        //   DataList = dataList;
+        // });
+
+      }
+    } catch (e) {
+    }
+  }
+
   // 드롭 다운 기본값
-  String dropdownValue = "서한1";
+  String dropdownValue = "";
   final PageController _pageController = PageController();
   int _currentPage = 0;
 
