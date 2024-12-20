@@ -19,27 +19,9 @@ class _MainScreenState extends State<MainScreen> {
   String id = "";       // 사용자 id
   String pw = "";       // 사용자 비밀번호
   String hexPw = "";    // 비밀번호 (hexadecimal)
-
-  // Future<void> _stateInfo() async {
-  //   ApiService apiService = ApiService();
-  //   String serverAddress = await apiService.loadServerAddress();
-  //
-  //   String state = "phone=$phone&id=$id&pw=$hexPw&method=currentstatus";
-  //   String stateUrl = serverAddress + state;
-  //   try {
-  //     // HTTP GET 요청 보내기
-  //     final response = await http.get(Uri.parse(stateUrl));
-  //
-  //     if (response.statusCode == 200) {
-  //       print("전송 성공: ${response.body}");
-  //       print(stateUrl);
-  //     } else {
-  //       print("전송 실패: ${response.statusCode}");
-  //     }
-  //   } catch (e) {
-  //     print("오류 발생: $e");
-  //   }
-  // }
+  String custId = "";   // 관리번호
+  String hexCustName = "";  // 관리명 hexadecimal
+  String custName = "";     // 관리명 decode
 
   Future<void> _getStateInfo() async {
     ApiService apiService = ApiService();
@@ -52,12 +34,6 @@ class _MainScreenState extends State<MainScreen> {
       final response = await http.get(Uri.parse(stateUrl));
       if (response.statusCode == 200) {
         List<dynamic> jsonList = json.decode(response.body);
-        // List<Data> dataList =
-        // jsonList.map((json) => Data.fromJson(json)).toList();
-        // setState(() {
-        //   DataList = dataList;
-        // });
-
       }
     } catch (e) {
     }
